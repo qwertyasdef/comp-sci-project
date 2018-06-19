@@ -1,6 +1,6 @@
 public class MorsePlayer extends Thread {
     
-    private static final int dotTime = 100;
+    private static final int dotTime = 50;
     private static final NotePlayer np = new NotePlayer();
     private static final int freq = 100;
     private static final int volume = 100;

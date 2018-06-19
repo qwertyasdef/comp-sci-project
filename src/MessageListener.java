@@ -17,7 +17,7 @@ public class MessageListener {
     ArrayList<Double> input = new ArrayList<>();
     double min = -1;
     double max = -1;
-    int samplePeriod = 50; // Read sensor every this many ms
+    int samplePeriod = 20; // Read sensor every this many ms
     
     public MessageListener(MessageAnalyzer parent) {
         this.parent = parent;
