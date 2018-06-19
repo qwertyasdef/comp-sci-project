@@ -237,11 +237,9 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_buttonSentHistoryActionPerformed
 
     private void buttonReceivedHistoryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonReceivedHistoryActionPerformed
-        receivedHistory.add(textTranslated.getText());
         HistoryFrame temp = new HistoryFrame("Messages received", receivedHistory);
         temp.setLocationRelativeTo(null);
         temp.setVisible(true);
-        receivedHistory.remove(receivedHistory.size() - 1);
     }//GEN-LAST:event_buttonReceivedHistoryActionPerformed
   
     public void sendDone() {
