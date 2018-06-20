@@ -59,9 +59,6 @@ public class MorseTranslator {
                 boolean found = false;
                 for (Entry<String, String> entry : morseCodes.entrySet()) {
                     if (entry.getValue().equals(letter)) {
-                        if (entry.getKey().equals("end")) {
-                            continue;
-                        }
                         output += entry.getKey();
                         found = true;
                         break;

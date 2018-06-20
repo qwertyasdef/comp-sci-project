@@ -18,9 +18,12 @@ public class MessageAnalyzer {
               Sensor
               value
             1   |     _       ___
-                |    / \     /   \
+            high|    / \     /   \
                 |   |   |   |     |       etc.
-            0   |__/     \_/       \___ 
+                |   |   |   |     |    
+            low |__/     \_/       \___ 
+                |
+            0   |----------------------
                          Time
 
         
@@ -52,16 +55,17 @@ public class MessageAnalyzer {
         }
         
         // Message is length of on and off segments, alternating
-        // Always start with off, then on
+        // Always start with on, then off
         ArrayList<Integer> message = new ArrayList<>();
         int start = 0;
         int stop;
-        boolean isOn = false; // false for off, true for on
+        boolean isOn = true; // true for on, false for off
         for (int i = 0; i < derivative.size(); i++) {
-            if (message.isEmpty() && derivative.get(i) < min / 2) {
-                // It was on, so add a 0 time off to the start
-                message.add(0);
-                isOn = true;
+            if (start == 0 && derivative.get(i) > max / 2) {
+                // First time turning on, don't add the initial off segment because 
+                // it is just the time since the previous message and means nothing
+                start = i;
+                continue;
             }
             // Peaks further than half the extrema count as turning on or off
             if (!isOn && derivative.get(i) > max / 2 || isOn && derivative.get(i) < min / 2) {
@@ -72,6 +76,7 @@ public class MessageAnalyzer {
             }
         }
         // The last off is not added because it is just the waiting time to make sure the message is over
+        // message should start and end with on
         
         /*
             Off times are easier to analyze than on times because different gaps
@@ -90,8 +95,8 @@ public class MessageAnalyzer {
             Gaps between dots and dashes should appear the most frequently
         */
         HashMap<Integer, Integer> offTimeFreq = new HashMap<>();
-        // Every other entry in message starting from 0 is the length of an off
-        for (int i = 0; i < message.size(); i += 2) {
+        // Every other entry in message starting from 1 is the length of an off
+        for (int i = 1; i < message.size(); i += 2) {
             int time = message.get(i);
             if (offTimeFreq.containsKey(time)) {
                 offTimeFreq.put(time, offTimeFreq.get(time) + 1);
@@ -99,7 +104,40 @@ public class MessageAnalyzer {
                 offTimeFreq.put(time, 1);
             }
         }
-        // Find the most common length
+        // Find the most common length (should be dot time)
+        /*
+            This doesn't work for short slow messages because the dot time is measured
+            in multiples of MessageListesner.samplePeriod ms. When the message is slow
+            and short, a dotplot of off times can look like this just by coincidence:
+            
+              Freq
+                |                       .
+                |     ....  .           .
+                |  . .........          .                              .   .
+                |------------------------------------------------------------
+                0       1       2       3       4       5       6       7    
+                                            Length
+            
+            The character space just happened to be more accurate than the space 
+            between dots and dashes, so the program thinks the dot length is 3 
+            instead of 1 even though most of the dots are clustered around 1.
+        
+            The longer the message, the more data there is, the lower the chance 
+            of this happening.
+            The closer the dot length is to MessageListesner.samplePeriod, the 
+            more variation required to be recorded as a different time, the 
+            lower chance of this happening.
+            
+            Possible fix:
+            For a given value of dotLength, the expected off times are 
+            dotLength, 3 * dotLength, and 7 * dotLength. Find the value of 
+            dotLength that minimizes the sum of the squared differences between 
+            each time and the closest expected time.
+            
+            Problem:
+            I don't know how to do this other than guessing and checking 
+            possible values of dotLength, which would be really slow.
+        */
         int commonestOffLength = (int) offTimeFreq.keySet().toArray()[0];
         for (int length : offTimeFreq.keySet()) {
             if (offTimeFreq.get(length) > offTimeFreq.get(commonestOffLength)) {
@@ -109,10 +147,10 @@ public class MessageAnalyzer {
         int dotLength = commonestOffLength;
         
         String code = "";
-        // The first off is just the time after the previous message, it means nothing
-        for (int i = 1; i < message.size(); i++) {
+        // Translate the various times in message into morse code
+        for (int i = 0; i < message.size(); i++) {
             int time = message.get(i);
-            if (i % 2 == 0) {
+            if (i % 2 == 1) {
                 // Off
                 if (time > 5 * dotLength) {
                     // Too long for character break, must be word break
@@ -132,6 +170,7 @@ public class MessageAnalyzer {
             }
         }
         
+        // Send the code to the MainFrame to display and translate to english
         parent.messageReceived(code);
         
     }

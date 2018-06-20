@@ -18,6 +18,7 @@ public class MessageListener {
     double min = -1;
     double max = -1;
     int samplePeriod = 20; // Read sensor every this many ms
+    int msgEndWait = 5; // Seconds to wait to make sure message is over
     
     public MessageListener(MessageAnalyzer parent) {
         this.parent = parent;
@@ -105,12 +106,12 @@ public class MessageListener {
         }
         // The signal counts as off if it is below the midpoint
         double mid = (min + max) / 2;
-        // Check previous 5 seconds or return if it hasn't been long enough
-        if (input.size() < 5 * 1000 / samplePeriod) {
+        // Check wait period or return if it hasn't been long enough
+        if (input.size() < msgEndWait * 1000 / samplePeriod) {
             return false;
         }
-        for (int i = input.size() - 1; i >= input.size() - 5 * 1000 / samplePeriod; i--) {
-            // Input was on within 10 seconds, message is still ongoing
+        for (int i = input.size() - 1; i >= input.size() - msgEndWait * 1000 / samplePeriod; i--) {
+            // Input was on within wait period, message is still ongoing
             if (input.get(i) > mid) {
                 return false;
             }
